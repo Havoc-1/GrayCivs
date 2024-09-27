@@ -28,6 +28,7 @@ GC_Weapons = [
     ["hgun_ACPC2_F",3]
 ];
 
+//Activates search when BLUFOR is in range
 [
     {
         params ["_u"];
@@ -42,22 +43,25 @@ GC_Weapons = [
         [
             {
                 _args params ["_u"];
+
+                //Ends PFH if dead
                 if !(alive _u) exitWith {
                     diag_log format ["[GreyCivs] %1 %2 has died. Exiting PFH.",name _u, getPosATL _u];
                     [_this select 1] call CBA_fnc_removePerFrameHandler
                 };
 
+                //List of nearby targets
                 private _list = [];
                 private _listOld = _u getVariable ["GC_List", []];
                 _list = (_u nearEntities [["CAMan","AllVehicles"], GC_Range]) select {(_x != _u) && (side _x == GC_bluSide)};
                 if (count _list == 0) exitWith {};
-
                 if (_list isNotEqualTo _listOld) then {
                     _u setVariable ["GC_List", _list];
                     diag_log format ["[GreyCivs] %1 units are in range of %2 %3. %4",count _list, name _u, getPosATL _u, _list];
                 };
 
                 {
+                    //Line of Sight checker to become hostile
                     private _canSee = [objNull, "VIEW"] checkVisibility [eyePos _u, eyePos _x];
                     /* diag_log format ["Visibility to %1: %2", name _x, _canSee]; */
                     if (_canSee > 0.5) then {
@@ -66,8 +70,9 @@ GC_Weapons = [
                         diag_log format ["[GreyCivs] %1 %2 has visibility on %3", name _u, getPosATL _u, name _x];
                     };
                     private _isHostile = _u getVariable ["GC_isHostile",false];
+                    
+                    //Handles weapon & ammo spawn after draw time ends or gets cuffed
                     if (_isHostile) exitWith {
-                        
                         private _timer = GC_DrawTime call BIS_fnc_randomInt;
                         (selectRandom GC_Weapons) params ["_weap","_mags"];
                         diag_log format ["[GreyCivs] %1 %2 is drawing weapon in %3 seconds. Exiting PFH.", name _u, getPosATL _u, _timer];
