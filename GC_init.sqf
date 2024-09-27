@@ -14,7 +14,6 @@
 _this params ["_u"];
 diag_log format ["[GreyCivs] Grey Civilian has been initalized on %1.",name _u];
 
-
 private _time = 3;          //PFH Tick rate
 private _s = [0,10];        //[Min,Max] Time in Seconds for GreyCiv to draw weapon.
 private _act = 100;         //Activation range to switch sides.
@@ -22,7 +21,8 @@ private _r = 20;            //Visibility range check to draw weapon.
 GC_bluSide = west;          //BLUFOR
 GC_opSide = east;           //OPFOR
 
-//Add weapon array later
+
+HostileWeapons = ["sgun_HunterShotgun_01_sawedoff_F","hgun_Pistol_01_F","hgun_ACPC2_F","hgun_Rook40_F"];
 
 [
     {
@@ -65,19 +65,36 @@ GC_opSide = east;           //OPFOR
                     if (_isHostile) exitWith {
                         
                         private _timer = _s call BIS_fnc_randomInt;
-                        diag_log format ["[GreyCivs] %1 (%2) is drawing weapon in %3 seconds. Exiting PFH.",_u, getPosATL _u, _timer];
+                        private _selectedWeapon = 
+                        selectRandom HostileWeapons;
+                        
+                        
+                        diag_log format ["[GreyCivs] %1 (%2) is drawing %3 in %4 seconds. Exiting PFH.",_u, getPosATL _u, _selectedWeapon, _timer];
+
+                        //Weapon has been added to inventory 
+                        _u addItemToUniform _selectedWeapon;
+                        //syntax error here
+                        _compatMagazines = (compatibleMagazines _selectedWeapon) select 0;
+                        _u addMagazines [_compatMagazines, 2];
+
+                        diag_log format ["[GreyCivs] %1 has been added with %2",_selectedWeapon, _compatMagazines];
+
                         //Add failsafe if players restrain and check inv
                         [
                             {
                                 params ["_u"];
                                 if (_u getVariable ["ace_captives_isHandcuffed", false]) exitWith {diag_log format ["[GreyCivs] %1 (%2) is restrained, cannot draw weapon.",_u, getPosATL _u]};
-                                _u addMagazines ["16Rnd_9x21_Mag", 2];
-                                _u addWeapon "hgun_Rook40_F";
+                                _u removeItemFromUniform _selectedWeapon;
+                                //_u addMagazines ["16Rnd_9x21_Mag", 2];
+                                //_u addWeapon "hgun_Rook40_F";
+                                _u addWeapon _selectedWeapon;
+
                                 _u setBehaviour "COMBAT";
                                 [group _u, getPosATL (_u findNearestEnemy _u), 100] call CBA_fnc_taskAttack;
                                 diag_log format ["[GreyCivs] Weapon has been added to %1 (%2)",name _u, getPosATL _u];
+                                
                             },
-                            [_u],
+                            [_u, _selectedWeapon],
                             _timer
                         ] call CBA_fnc_waitAndExecute;
 
