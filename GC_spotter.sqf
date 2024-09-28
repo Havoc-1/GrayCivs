@@ -93,7 +93,8 @@ GC_MinRange = 20;
         //Scans area
         
         _u setVariable ["GC_Spotting",true];
-        private _uPos = selectRandom ["DOWN","UP","MIDDLE","AUTO"];
+        //private _uPos = selectRandom ["DOWN","UP","MIDDLE","AUTO"];
+        private _uPos = selectRandom ["UP","MIDDLE","AUTO"];
         _u setUnitPos _uPos;
         //Get random pos to look at
         private _minSpotRange = GC_SpotRange  * 0.4;
@@ -103,7 +104,7 @@ GC_MinRange = 20;
         _u setVariable ["GC_SpotReady", false];
 
         diag_log format ["[GreyCivs] %1 %2 is starting scan.", name _u, getPosATL _u];
-        while {count _scanPos <= 5 && (unitPos _u == _uPos)} do {
+        while {count _scanPos <= 5} do {
             if (count _scanPos == 5) exitWith {
                 diag_log format ["[GreyCivs] %1 %2 has 5 positions, ready to spot.", name _u, getPosATL _u];
                 _u setVariable ["GC_SpotReady", true];
@@ -111,7 +112,7 @@ GC_MinRange = 20;
                 _scanPos = [];
                 _attempt = 0;
             };
-            diag_log format ["[GreyCivs] %1 %2 is attempting scan #%3.", name _u, getPosATL _u,_attempts];
+            //diag_log format ["[GreyCivs] %1 %2 is attempting scan #%3.", name _u, getPosATL _u,_attempts];
             //if (primaryWeapon _u != "Binocular") exitWith {diag_log format ["[GreyCivs] %1 %2 cancelled scan due to removed Binoculars.", name _u, getPosATL _u]};
             if !(alive _u) exitWith {diag_log format ["[GreyCivs] %1 %2 has died, cancelling scan.", name _u, getPosATL _u]};
 
@@ -122,19 +123,20 @@ GC_MinRange = 20;
                 private _newPos = _u getRelPos [30, _u getRelDir _checkPos];
                 private _visBlocked = [objNull, "VIEW"] checkVisibility [eyePos _u, [_newPos select 0, _newPos select 1, (eyePos _u) select 2]];
                 if !(_terrainBlocked && _visBlocked < 0.8) then {
-                    if (count _scanPos == 0) then {
+                    if (count _scanPos == 0) exitWith {
                         _scanPos pushBackUnique _checkPos;
                         diag_log format ["[GreyCivs] %1 %2 has added %3 to scan positions (%4). Visibility: %5. Dir: %6.", name _u, getPosATL _u, _checkPos, count _scanPos, _visBlocked, _u getDir _checkPos];
-                    } else {
-                        {
-                            if ((_checkPos distance _x > 10) && !(_visBlocked < 0.8)) exitWith {
-                                _scanPos pushBackUnique _checkPos;
-                                diag_log format ["[GreyCivs] %1 %2 has added %3 to scan positions (%4). Visibility: %5. Dir: %6.", name _u, getPosATL _u, _checkPos, count _scanPos, _visBlocked, _u getDir _checkPos];
-                            };
-                        } forEach _scanPos;
                     };
+                    
+                    {
+                        if ((_checkPos distance _x > 10) && !(_visBlocked < 0.8)) exitWith {
+                            _scanPos pushBackUnique _checkPos;
+                            diag_log format ["[GreyCivs] %1 %2 has added %3 to scan positions (%4). Visibility: %5. Dir: %6.", name _u, getPosATL _u, _checkPos, count _scanPos, _visBlocked, _u getDir _checkPos];
+                        };
+                    } forEach _scanPos;
+                    
                 };
-                diag_log format ["[GreyCivs] %1 %2 is attempted scan #%3. Visibility: %4", name _u, getPosATL _u,_attempts, _visBlocked];
+                //diag_log format ["[GreyCivs] %1 %2 is attempted scan #%3. Visibility: %4", name _u, getPosATL _u,_attempts, _visBlocked];
             };
 
             //Failsafe
@@ -158,9 +160,10 @@ GC_MinRange = 20;
             {
                 params ["_u"];
                 _u setVariable ["GC_SpotReady", nil];
-                private _scanPos = _u getVariable "GC_ScanPos";
-                private _lookAtPos = selectRandom _scanPos;
+                private _scanPosNew = _u getVariable "GC_ScanPos";
+                private _lookAtPos = selectRandom _scanPosNew;
                 _scanPos = [];
+                _scanPosNew = [];
                 _u setVariable ["GC_ScanPos", nil];
                 _u lookAt _lookAtPos;
                 diag_log format ["[GreyCivs] %1 %2 spotting towards %3", name _u, getPosATL _u, _u getDir _lookAtPos];
@@ -203,8 +206,6 @@ GC_MinRange = 20;
             },
             [_u,_scanPos]
         ] call CBA_fnc_waitUntilAndExecute;
-
-
     },
     GC_Tick*5,
     [_u]
