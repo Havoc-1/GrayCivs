@@ -109,6 +109,7 @@ GC_MinRange = 20;
                 _u setVariable ["GC_SpotReady", true];
                 _u setVariable ["GC_ScanPos", _scanPos];
                 _scanPos = [];
+                _attempt = 0;
             };
             diag_log format ["[GreyCivs] %1 %2 is attempting scan #%3.", name _u, getPosATL _u,_attempts];
             //if (primaryWeapon _u != "Binocular") exitWith {diag_log format ["[GreyCivs] %1 %2 cancelled scan due to removed Binoculars.", name _u, getPosATL _u]};
@@ -118,7 +119,7 @@ GC_MinRange = 20;
             private _dist = _checkPos distance (getPosATL _u);
             if (_dist >= _minSpotRange) then {
                 private _terrainBlocked = terrainIntersect [getPosATL _u, _checkPos];
-                private _newPos = _u getRelPos [30, _u getDir _checkPos];
+                private _newPos = _u getRelPos [30, _u getRelDir _checkPos];
                 private _visBlocked = [objNull, "VIEW"] checkVisibility [eyePos _u, [_newPos select 0, _newPos select 1, (eyePos _u) select 2]];
                 if !(_terrainBlocked && _visBlocked < 0.8) then {
                     if (count _scanPos == 0) then {
@@ -144,6 +145,7 @@ GC_MinRange = 20;
                 _u setVariable ["GC_SpotReady", true];
                 _u setVariable ["GC_ScanPos", _scanPos];
                 _scanPos = [];
+                _attempts = 0;
             };
             _attempts = _attempts + 1;
         };
