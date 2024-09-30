@@ -91,10 +91,10 @@ if (_isEny) then {
             diag_log format ["[GreyCivs] %1 units are in range of %2 %3 (%4). %5",count _list, name _u, getPosATL _u, _u getVariable ["GC_nameTag", "Civilian"], _list];
         };
 
+        //Cancel spot if units are too close or line of sight
+        private _cancelSpot = false;
         if (_isEny) then {
-            //Cancel spot if units are too close or line of sight
-            private _cancelSpot = false;
-            private _listSort = [_list, [], {_x distance getPosATL _u}, "ASCEND"] call BIS_fnc_sortBy;
+            private _listSort = [_list, [], {_x distance _u}, "ASCEND"] call BIS_fnc_sortBy;
             if ((_listSort select 0) distance _u <= (GC_MinRange select 0)) exitWith {
                 _cancelSpot = true;
                 diag_log format ["[GreyCivs] Units within minimum distance of %1 %2 (%3). Cancelling spot.", name _u, getPosATL _u, _u getVariable ["GC_nameTag", "Civilian"]];
@@ -105,8 +105,8 @@ if (_isEny) then {
                     diag_log format ["[GreyCivs] Close units have line of sight to %1 %2 (%3). Cancelling spot.", name _u, getPosATL _u, _u getVariable ["GC_nameTag", "Civilian"]];
                 };   
             } forEach _listSort select {_x distance _u <= (GC_MinRange select 1)};
-            if (_cancelSpot) exitWith {};
         };
+        if (_cancelSpot) exitWith {};
 
         //Begin scanning area
         diag_log format ["[GreyCivs] %1 %2 (%3) is starting scan.", name _u, getPosATL _u, _u getVariable ["GC_nameTag", "Civilian"]];
