@@ -126,25 +126,31 @@ GC_Weapons = [
                         
                         [_this select 1] call CBA_fnc_removePerFrameHandler;
                         private _timer = GC_DrawTime call BIS_fnc_randomInt;
-                        _timer = 1;
+                        //_timer = 1;
                         diag_log format ["[GrayCivs] %1 %2 will search for a nearby weapon in %3 seconds. Exiting PFH.", name _u, getPosATL _u, _timer];
-                        if (count _guns == 0) exitWith {diag_log format ["[GrayCivs] %1 %2 has no nearby guns to grab.", name _u, getPosATL _u]};
-                        private _randomGun = selectRandom _guns;
-                        diag_log format ["[GrayCivs] %1 %2 is trying to grab %3 %4.", name _u, getPosATL _u, ((weaponCargo _randomGun) select 0), getPosATL _randomGun];
-                        [group _u] call CBA_fnc_clearWaypoints;
-                        [group _u, getPosATL _randomGun, 0, "MOVE", "CARELESS", "YELLOW", "FULL", "STAG COLUMN"] call CBA_fnc_addWaypoint;
                         [
                             {
-                                params ["_u", "_randomGun"];
+                                params ["_u", "_guns"];
+                                if (count _guns == 0 || count (_guns select {(_x getVariable ["GC_wpnTaken", false]) == false}) == 0) exitWith {diag_log format ["[GrayCivs] %1 %2 has no nearby guns to grab.", name _u, getPosATL _u]};
+                                private _randomGun = (selectRandom (_guns select {(_x getVariable ["GC_wpnTaken", false]) == false})) ;
+                                _randomGun setVariable ["GC_wpnTaken", true];
+                                diag_log format ["[GrayCivs] %1 %2 is trying to grab %3 %4.", name _u, getPosATL _u, ((weaponCargo _randomGun) select 0), getPosATL _randomGun];
+                                [group _u] call CBA_fnc_clearWaypoints;
+                                [group _u, getPosATL _randomGun, 0, "MOVE", "CARELESS", "YELLOW", "FULL", "STAG COLUMN"] call CBA_fnc_addWaypoint;
+                                
                                 [
                                     {
                                         params ["_u", "_randomGun"];
-                                        private _canSeeGun = [getCorpse _randomGun, "VIEW"] checkVisibility [eyePos _u, getPosASL _randomGun];
+                                        private _visPos = [(getPosASL (getCorpse _randomGun)) select 0, (getPosASL (getCorpse _randomGun)) select 1, ((getPosASL (getCorpse _randomGun)) select 2) + 0.7];
+                                        private _canSeeGun = [(getCorpse _randomGun), "VIEW", unitBackpack (getCorpse _randomGun)] checkVisibility [eyePos _u, _visPos];
+                                        //hintSilent format ["%1, %2, %3", _canSeeGun, (getCorpse _randomGun), getPosASL (getCorpse _randomGun)];
+                                        //drawIcon3D ["\A3\ui_f\data\map\markers\military\circle_CA.paa", [1,1,0,1], ASLtoAGL _visPos, 0.3, 0.3, 45, "Here", 0, 0.03, "TahomaB","center",true,0,0.003];
                                         (_u distance _randomGun < 4) && (_canSeeGun > 0.2);
+                                        
                                     },
                                     {
                                         params ["_u", "_randomGun"];
-                                        if !(alive _u) exitWith {};
+                                        if !(alive _u || alive _randomGun) exitWith {};
                                         diag_log format ["[GrayCivs] %1 %2 has grabbed %3 %4.", name _u, getPosATL _u, ((weaponCargo _randomGun) select 0), getPosATL _randomGun];
                                         _u action ["TakeWeapon", _randomGun, ((weaponCargo _randomGun) select 0)];
                                         _u addMagazines [((compatibleMagazines ((weaponCargo _randomGun) select 0)) select 0),1];
@@ -157,7 +163,7 @@ GC_Weapons = [
                                     [_u, _randomGun]
                                 ] call CBA_fnc_waitUntilAndExecute; 
                             },
-                            [_u, _randomGun],
+                            [_u, _guns],
                             _timer
                         ] call CBA_fnc_waitAndExecute;
                     };
