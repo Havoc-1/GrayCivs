@@ -61,7 +61,7 @@ GC_Weapons = [
                     _u setVariable ["GC_List", _list];
                     diag_log format ["[GrayCivs] %1 units are in range of %2 %3. %4",count _list, name _u, getPosATL _u, _list];
                 };
-                
+                private _guns = nearestObjects [_u, ["WeaponHolderSimulated"], 30]; 
 
                 {
                     //Line of Sight checker to become hostile
@@ -128,20 +128,17 @@ GC_Weapons = [
                         [_this select 1] call CBA_fnc_removePerFrameHandler;
                         private _timer = GC_DrawTime call BIS_fnc_randomInt;
                         //_timer = 1;
-                        private _guns = nearestObjects [_u, ["WeaponHolderSimulated"], 30]; 
-                        if (count _guns == 0 || count (_guns select {(_x getVariable ["GC_wpnTaken", false]) == false}) == 0) exitWith {diag_log format ["[GrayCivs] %1 %2 has no nearby guns to grab.", name _u, getPosATL _u]};
                         diag_log format ["[GrayCivs] %1 %2 will search for a nearby weapon in %3 seconds. Exiting PFH.", name _u, getPosATL _u, _timer];
                         [
                             {
                                 params ["_u", "_guns"];
-                                private _guns = nearestObjects [_u, ["WeaponHolderSimulated"], 30]; 
+                                if (count _guns == 0 || count (_guns select {(_x getVariable ["GC_wpnTaken", false]) == false}) == 0) exitWith {diag_log format ["[GrayCivs] %1 %2 has no nearby guns to grab.", name _u, getPosATL _u]};
                                 private _randomGun = (selectRandom (_guns select {(_x getVariable ["GC_wpnTaken", false]) == false})) ;
                                 _randomGun setVariable ["GC_wpnTaken", true];
-                                if !(alive _randomGun) exitWith {diag_log format ["[GrayCivs] Gun no longer exists."]};
+                                if (isNull _randomGun) exitWith {diag_log format ["[GrayCivs] %1 %2 weapon seach cancelled. Gun no longer exists.", name _u, getPosATL _u]};
                                 diag_log format ["[GrayCivs] %1 %2 is trying to grab %3 %4.", name _u, getPosATL _u, ((weaponCargo _randomGun) select 0), getPosATL _randomGun];
-                                if (isNull ((weaponCargo _randomGun) select 0)) exitWith {diag_log format ["[GrayCivs] Gun no longer exists. Null"]};
                                 [group _u] call CBA_fnc_clearWaypoints;
-                                [group _u, (getCorpse _randomGun), 0, "MOVE", "CARELESS", "YELLOW", "FULL", "STAG COLUMN"] call CBA_fnc_addWaypoint;
+                                [group _u, getPosATL _randomGun, 0, "MOVE", "CARELESS", "YELLOW", "FULL", "STAG COLUMN"] call CBA_fnc_addWaypoint;
                                 
                                 [
                                     {
@@ -158,17 +155,15 @@ GC_Weapons = [
                                         if !(alive _u || alive _randomGun) exitWith {};
                                         diag_log format ["[GrayCivs] %1 %2 has grabbed %3 %4.", name _u, getPosATL _u, ((weaponCargo _randomGun) select 0), getPosATL _randomGun];
                                         _u action ["TakeWeapon", _randomGun, ((weaponCargo _randomGun) select 0)];
-                                        _u setVariable ["GC_gunDrawn", true];
                                         _u addMagazines [((compatibleMagazines ((weaponCargo _randomGun) select 0)) select 0),1];
                                         _u addWeapon ((weaponCargo _randomGun) select 0);;
                                         _u selectWeapon ((weaponCargo _randomGun) select 0);
                                         _u setBehaviour "COMBAT";
                                         deleteVehicle _randomGun;
                                         [group _u] call CBA_fnc_clearWaypoints;
-                                        [group _u, getPosATL (_u findNearestEnemy _u), 100] call CBA_fnc_taskAttack;
                                     },
                                     [_u, _randomGun]
-                                ] call CBA_fnc_waitUntilAndExecute; 
+                                ] call CBA_fnc_waitUntilAndExecute;
                                 [
                                     {
                                         params ["_u"];
