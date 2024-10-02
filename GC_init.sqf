@@ -61,7 +61,7 @@ GC_Weapons = [
                     _u setVariable ["GC_List", _list];
                     diag_log format ["[GrayCivs] %1 units are in range of %2 %3. %4",count _list, name _u, getPosATL _u, _list];
                 };
-                private _guns = nearestObjects [_u, ["WeaponHolderSimulated"], 30]; 
+                
 
                 {
                     //Line of Sight checker to become hostile
@@ -127,14 +127,18 @@ GC_Weapons = [
                         
                         [_this select 1] call CBA_fnc_removePerFrameHandler;
                         private _timer = GC_DrawTime call BIS_fnc_randomInt;
-                        //_timer = 1;
+                        _timer = 1;
                         diag_log format ["[GrayCivs] %1 %2 will search for a nearby weapon in %3 seconds. Exiting PFH.", name _u, getPosATL _u, _timer];
                         [
                             {
                                 params ["_u", "_guns"];
+                                private _guns = nearestObjects [_u, ["WeaponHolderSimulated"], 30]; 
+                                //diag_log format ["[GrayCivs] %1, _guns: %2", name _u, _guns];
                                 if (count _guns == 0 || count (_guns select {(_x getVariable ["GC_wpnTaken", false]) == false}) == 0) exitWith {diag_log format ["[GrayCivs] %1 %2 has no nearby guns to grab.", name _u, getPosATL _u]};
                                 private _randomGun = (selectRandom (_guns select {(_x getVariable ["GC_wpnTaken", false]) == false})) ;
+                                //diag_log format ["[GrayCivs] %1, _randomGun: %2", name _u, _randomGun];
                                 _randomGun setVariable ["GC_wpnTaken", true];
+                                //diag_log format ["[GrayCivs] %1, _randomGun Var: %2", name _u, _randomGun getVariable "GC_wpnTaken"];
                                 if (isNull _randomGun) exitWith {diag_log format ["[GrayCivs] %1 %2 weapon seach cancelled. Gun no longer exists.", name _u, getPosATL _u]};
                                 diag_log format ["[GrayCivs] %1 %2 is trying to grab %3 %4.", name _u, getPosATL _u, ((weaponCargo _randomGun) select 0), getPosATL _randomGun];
                                 [group _u] call CBA_fnc_clearWaypoints;
