@@ -1,5 +1,5 @@
 /* 
- *	Author: [SGC] Xephros
+ *	Author: [SGC] Xephros, [DMCL] _keystone
  *	Function to initialize Grey Civilian on unit.
  *
  *	Arguments:
@@ -22,6 +22,7 @@ GC_Range = 20;              //Visibility range check to draw weapon.
 GC_bluSide = west;          //BLUFOR
 GC_opSide = east;           //OPFOR
 GC_wpnTimeout = 180;        //Cancel weapon search if exceeds timeout
+GC_grabChance = 0.5;        //Chance for shooter to grab nearby weapon instead of drawing concealed.
 
 GC_Weapons = [
     ["hgun_Rook40_F",3],
@@ -73,9 +74,10 @@ GC_Weapons = [
                         diag_log format ["[GrayCivs] %1 %2 has visibility on %3", name _u, getPosATL _u, name _x];
                     };
                     private _isHostile = _u getVariable ["GC_isHostile",false];
-                    
+                    [_this select 1] call CBA_fnc_removePerFrameHandler;
+
                     //Handles weapon & ammo spawn after draw time ends or gets cuffed
-                    /* if (_isHostile) exitWith {
+                    if (random 1 < GC_grabChance) then {
                         private _timer = GC_DrawTime call BIS_fnc_randomInt;
                         (selectRandom GC_Weapons) params ["_weap","_mags"];
                         diag_log format ["[GrayCivs] %1 %2 is drawing weapon in %3 seconds. Exiting PFH.", name _u, getPosATL _u, _timer];
@@ -118,38 +120,37 @@ GC_Weapons = [
                             [_u,_weap,_mags],
                             _timer
                         ] call CBA_fnc_waitAndExecute;
-
-                        [_this select 1] call CBA_fnc_removePerFrameHandler;
-                    }; */
-                    
-                    
-                    if (_isHostile) exitWith {
                         
-                        [_this select 1] call CBA_fnc_removePerFrameHandler;
+                    } else {
+                        
                         private _timer = GC_DrawTime call BIS_fnc_randomInt;
                         _timer = 1;
                         diag_log format ["[GrayCivs] %1 %2 will search for a nearby weapon in %3 seconds. Exiting PFH.", name _u, getPosATL _u, _timer];
                         [
                             {
                                 params ["_u"];
-                                private _guns = nearestObjects [_u, ["WeaponHolderSimulated"], 30];
-                                if (count _guns == 0 || count (_guns select {(_x getVariable ["GC_wpnTaken", false]) == false}) == 0) exitWith {diag_log format ["[GrayCivs] %1 %2 has no nearby guns to grab.", name _u, getPosATL _u]};
-                                private _randomGun = (selectRandom (_guns select {(_x getVariable ["GC_wpnTaken", false]) == false})) ;
+                                private _wpns = (nearestObjects [_u, ["WeaponHolder", "WeaponHolderSimulated"], 30]) select {!(isPlayer (attachedTo _x))};
+                                private _wpnsNotTaken = _wpns select {(_x getVariable ["GC_wpnTaken", false]) == false};
+                                if (count _wpns == 0 || count _wpnsNotTaken == 0) exitWith {diag_log format ["[GrayCivs] %1 %2 has no nearby guns to grab.", name _u, getPosATL _u]};
+                                private _randomGun = selectRandom _wpnsNotTaken;
                                 _randomGun setVariable ["GC_wpnTaken", true];
-                                if (isNull _randomGun || isNull ((weaponCargo _randomGun) select 0)) exitWith {diag_log format ["[GrayCivs] %1 %2 weapon seach cancelled. Gun no longer exists.", name _u, getPosATL _u]};
+                                if (isNull _randomGun) exitWith {diag_log format ["[GrayCivs] %1 %2 weapon seach cancelled. Gun no longer exists.", name _u, getPosATL _u]};
                                 diag_log format ["[GrayCivs] %1 %2 is trying to grab %3 %4.", name _u, getPosATL _u, ((weaponCargo _randomGun) select 0), getPosATL _randomGun];
                                 [group _u] call CBA_fnc_clearWaypoints;
                                 [group _u, getPosATL _randomGun, 0, "MOVE", "CARELESS", "YELLOW", "FULL", "STAG COLUMN"] call CBA_fnc_addWaypoint;
-                                
+                                private _visPos = [];
+                                if (_randomGun isKindOf "WeaponHolderSimulated") then {
+                                    _visPos = [(getPosASL (getCorpse _randomGun)) select 0, (getPosASL (getCorpse _randomGun)) select 1, ((getPosASL (getCorpse _randomGun)) select 2) + 0.7];
+                                } else {
+                                    _visPos = [(getPosASL _randomGun) select 0, (getPosASL _randomGun) select 1, ((getPosASL _randomGun) select 2) + 0.7];
+                                };
+
                                 [
                                     {
-                                        params ["_u", "_randomGun"];
-                                        private _visPos = [(getPosASL (getCorpse _randomGun)) select 0, (getPosASL (getCorpse _randomGun)) select 1, ((getPosASL (getCorpse _randomGun)) select 2) + 0.7];
-                                        private _canSeeGun = [(getCorpse _randomGun), "VIEW", unitBackpack (getCorpse _randomGun)] checkVisibility [eyePos _u, _visPos];
-                                        //hintSilent format ["%1, %2, %3", _canSeeGun, (getCorpse _randomGun), getPosASL (getCorpse _randomGun)];
-                                        //drawIcon3D ["\A3\ui_f\data\map\markers\military\circle_CA.paa", [1,1,0,1], ASLtoAGL _visPos, 0.3, 0.3, 45, "Here", 0, 0.03, "TahomaB","center",true,0,0.003];
+                                        params ["_u", "_randomGun","_visPos"];
+                                        private _canSeeGun = [objNull, "VIEW"] checkVisibility [eyePos _u, _visPos];
+                                        drawIcon3D ["\A3\ui_f\data\map\markers\military\circle_CA.paa", [1,1,0,1], ASLtoAGL _visPos, 0.3, 0.3, 45, "Here", 0, 0.03, "TahomaB","center",true,0,0.003];
                                         (_u distance _randomGun < 4) && (_canSeeGun > 0.2);
-                                        
                                     },
                                     {
                                         params ["_u", "_randomGun"];
@@ -157,14 +158,15 @@ GC_Weapons = [
                                         diag_log format ["[GrayCivs] %1 %2 has grabbed %3 %4.", name _u, getPosATL _u, ((weaponCargo _randomGun) select 0), getPosATL _randomGun];
                                         _u action ["TakeWeapon", _randomGun, ((weaponCargo _randomGun) select 0)];
                                         _u addMagazines [((compatibleMagazines ((weaponCargo _randomGun) select 0)) select 0),1];
-                                        _u addWeapon ((weaponCargo _randomGun) select 0);;
+                                        _u addWeapon ((weaponCargo _randomGun) select 0);
                                         _u selectWeapon ((weaponCargo _randomGun) select 0);
                                         _u setBehaviour "COMBAT";
                                         deleteVehicle _randomGun;
                                         [group _u] call CBA_fnc_clearWaypoints;
                                     },
-                                    [_u, _randomGun]
+                                    [_u, _randomGun,_visPos]
                                 ] call CBA_fnc_waitUntilAndExecute;
+
                                 [
                                     {
                                         params ["_u"];
