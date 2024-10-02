@@ -74,6 +74,8 @@ GC_Weapons = [
                         diag_log format ["[GrayCivs] %1 %2 has visibility on %3", name _u, getPosATL _u, name _x];
                     };
                     private _isHostile = _u getVariable ["GC_isHostile",false];
+                    if !(_isHostile) exitWith {};
+
                     [_this select 1] call CBA_fnc_removePerFrameHandler;
 
                     //Handles weapon & ammo spawn after draw time ends or gets cuffed
@@ -149,7 +151,7 @@ GC_Weapons = [
                                     {
                                         params ["_u", "_randomGun","_visPos"];
                                         private _canSeeGun = [objNull, "VIEW"] checkVisibility [eyePos _u, _visPos];
-                                        drawIcon3D ["\A3\ui_f\data\map\markers\military\circle_CA.paa", [1,1,0,1], ASLtoAGL _visPos, 0.3, 0.3, 45, "Here", 0, 0.03, "TahomaB","center",true,0,0.003];
+                                        //drawIcon3D ["\A3\ui_f\data\map\markers\military\circle_CA.paa", [1,1,0,1], ASLtoAGL _visPos, 0.3, 0.3, 45, "Here", 0, 0.03, "TahomaB","center",true,0,0.003];
                                         (_u distance _randomGun < 4) && (_canSeeGun > 0.2);
                                     },
                                     {
