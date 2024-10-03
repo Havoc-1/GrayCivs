@@ -12,7 +12,6 @@
 
 //Push to new function file
 _this params ["_u",["_fac", GC_Fac],["_range",GC_Act],["_tick",GC_Tick]];
-diag_log format ["[GrayCivs] Grey Civilian has been initalized on %1.", name _u];
 
 //Faction failsafe
 if ((side _u != civilian) && (_u isKindOf "CAManBase")) exitWith {diag_log format ["[GrayCivs] WARNING: %1 %2 is not a civilian. Exiting script.", name _u, getPosATL _u]};
@@ -20,6 +19,12 @@ if (_fac == civilian) then {
     _fac = east;
     diag_log format ["[GrayCivs] %1 %2 cannot be spotting for civilian faction. Defaulting to east."];
 };
+
+private _isGC = _u getVariable ["GC_isGC", false];
+if !(_isGC) exitWith {};
+_u setVariable ["GC_isGC", true];
+diag_log format ["[GrayCivs] Grey Civilian (Shooter) has been initalized on %1.", name _u];
+[_u] joinSilent grpNull;
 
 //Activates search when BLUFOR is in range
 [
@@ -32,9 +37,10 @@ if (_fac == civilian) then {
         diag_log format ["[GrayCivs] %1 %2 is now searching for targets. Starting PFH.",name _u, getPosATL _u];
         diag_log format ["[GrayCivs] Faction: %1, Range: %2", _fac, _range];
         private _grp = createGroup _fac;
-        (units group _u) joinSilent _grp;
+        
+        [_u] joinSilent _grp;
         _u setCaptive true;
-        _u setBehaviour "CARELESS";
+        //_u setBehaviour "CARELESS";
         [
             {
                 _args params ["_u"];

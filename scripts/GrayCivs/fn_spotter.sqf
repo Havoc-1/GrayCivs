@@ -15,13 +15,19 @@
  */
 
 _this params ["_u",["_isEny", true],["_path", false]];
-diag_log format ["[GreyCivs] Grey Civilian (Spotter) has been initalized on %1 %2.", name _u, getPosATL _u];
+
 
 if ((side _u != civilian) && (_u isKindOf "CAManBase")) exitWith {diag_log format ["[GreyCivs] WARNING: %1 %2 is not a civilian. Exiting script.", name _u, getPosATL _u]};
 if (GC_Fac == civilian) then {
     GC_Fac = east;
     diag_log format ["[GreyCivs] GC_Fac cannot be set to civilian faction. Defaulting to east."];
 };
+
+private _isGC = _u getVariable ["GC_isGC", false];
+if !(_isGC) exitWith {};
+_u setVariable ["GC_isGC", true];
+
+diag_log format ["[GreyCivs] Grey Civilian (Spotter) has been initalized on %1 %2.", name _u, getPosATL _u];
 
 //Adds bino & radio to inventory
 if !((GC_Optic in (items _u)) && ((binocular _u) != GC_Optic)) then {
@@ -36,9 +42,10 @@ if !(GC_RadioItem in (items _u) && _isEny) then {
 _u setVariable ["GC_Path", _path];
 
 //Faction switch
+[_u] joinSilent grpNull;
 if (_isEny) then {
     private _grp = createGroup GC_Fac;
-    (units group _u) joinSilent _grp;
+    [_u] joinSilent _grp;
     _u setCaptive true;
     _u setVariable ["GC_nameTag", "Enemy"];
 };
@@ -59,11 +66,22 @@ if (_isEny) then {
         private _isSpotting = _u getVariable ["GC_Spotting",false];
         if (_isSpotting) exitWith {};
 
+        //Checks if Binos are in inventory
+        if !((GC_Optic in (items _u)) && ((binocular _u) != GC_Optic)) exitWith {
+            [_this select 1] call CBA_fnc_removePerFrameHandler;
+            diag_log format ["[GreyCivs] %1 %2 (%3) has no binoculars to spot with. Removing PFH.",name _u, getPosATL _u, _u getVariable ["GC_nameTag", "Civilian"]];
+        };
+        if !(GC_RadioItem in (items _u) && _isEny) exitWith {
+            [_this select 1] call CBA_fnc_removePerFrameHandler;
+            diag_log format ["[GreyCivs] %1 %2 (%3) no radio to report with. Removing PFH.", name _u, getPosATL _u, _u getVariable ["GC_nameTag", "Civilian"]];
+        };
+
         //List of nearby targets
         private _list = [_u] call XK_GC_fnc_getList;
 
         //Cancel spot if units are too close or line of sight
         private _cancelSpot = false;
+        if ((_u getVariable ["ace_captives_isHandcuffed", false]) == true) exitWith {diag_log format ["[GreyCivs] %1 %2 (%3) is handcuffed. Unable to spot.",name _u, getPosATL _u, _u getVariable ["GC_nameTag", "Civilian"]];};
         if (_isEny) then {
             private _listSort = [_list, [], {_x distance _u}, "ASCEND"] call BIS_fnc_sortBy;
             if ((_listSort select 0) distance _u <= (GC_MinRange select 0)) exitWith {
