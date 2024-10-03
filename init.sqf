@@ -1,0 +1,1 @@
+[] call XK_fnc_init;

@@ -1,0 +1,5 @@
+//CFG FUNCTIONS
+class CfgFunctions
+{
+    #include "scripts\XK_fnc.hpp"
+};
