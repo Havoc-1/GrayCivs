@@ -14,28 +14,6 @@
  *		[this, false, true] execVM "GC_spotter.sqf";
  */
 
-//Add variable for civilian vs enemy spotter
-
-
-
-GC_Fac = east;                      //Faction of spotter
-GC_SpotCheck = 15;                  //PFH Tick rate
-GC_Optic = "Binocular";             //Binocular equipment used to spot targets.
-GC_RadioItem = "Item_ItemRadio";    //Radio equipment in inventory to report targets.
-GC_RadioChance = 0.7;               //Chance to report with radio
-GC_RadioTime = [20,30];             //[Min,Max] Seconds spotter has radio visible
-GC_SpotRange = [300,700];           //[Min, Max] Spot distance
-GC_SpotTime = [35,60];              //[Min,Max] Time in seconds per interval to spot when binoculars are used
-GC_SpotCooldown = [20,60];          //[Min,Max] Time in seconds before next spot
-GC_MinRange = [30,70];
-    /* GC_MinRange prevents spotter from using binoculars when BLUFOR is too close. <NUMBER>
-     *	0: Will not spot if enemy is within range.
-     *	1: Will not spot if enemy is within range and has line of sight.
-     */
-GC_MaxAttempts = 100;               //Maximum iterations to search for spotting position.
-GC_AlertRange = 200;                //If spots target, will alert a random group within this radius.
-GC_Alert = 3;                       //If spotted targets are above knowsAbout GC_Alert, then report targets to random group within GC_AlertRange.
-
 _this params ["_u",["_isEny", true],["_path", false]];
 diag_log format ["[GreyCivs] Grey Civilian (Spotter) has been initalized on %1 %2.", name _u, getPosATL _u];
 
@@ -82,14 +60,7 @@ if (_isEny) then {
         if (_isSpotting) exitWith {};
 
         //List of nearby targets
-        private _list = [];
-        private _listOld = _u getVariable ["GC_List", []];
-        _list = (_u nearEntities [["CAManBase","AllVehicles"], (GC_SpotRange select 1)]) select {(_x != _u) && (side _x != civilian) && !([side _x, GC_Fac] call BIS_fnc_sideIsFriendly)};
-        if (count _list == 0) exitWith {};
-        if (_list isNotEqualTo _listOld) then {
-            _u setVariable ["GC_List", _list];
-            diag_log format ["[GreyCivs] %1 units are in range of %2 %3 (%4). %5",count _list, name _u, getPosATL _u, _u getVariable ["GC_nameTag", "Civilian"], _list];
-        };
+        private _list = [_u] call XK_GC_fnc_getList;
 
         //Cancel spot if units are too close or line of sight
         private _cancelSpot = false;
@@ -200,9 +171,9 @@ if (_isEny) then {
                         
                         if (_isEny && (random 1 <= GC_RadioChance)) then {
                             _u setCaptive false;
-                            private _radio = "Land_PortableLongRangeRadio_F" createVehicle getPosATL _u;
+                            private _radio = (GC_RadioModel select 0) createVehicle getPosATL _u;
                             _radio attachTo [_u, [-0.1,0.07,0.15], "Spine3", true];
-                            _radio setVectorDirAndUp [[0,-0.4,1],[0,1,0.4]];
+                            _radio setVectorDirAndUp (GC_RadioModel select 1);
                             private _radioDelay = 1;
                             private _radioTime = GC_radioTime call BIS_fnc_randomInt;
                             if (_radioTime > _spotTime) then {

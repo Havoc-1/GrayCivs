@@ -1,1 +1,1 @@
-[] call XK_fnc_init;
+[] call XK_GC_fnc_init;
