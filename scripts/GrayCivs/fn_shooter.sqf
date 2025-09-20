@@ -13,7 +13,7 @@
 params ["_u",["_grabChance",GC_grabChance],["_fac",GC_Fac],["_range",GC_Act],["_tick",GC_Tick]];
 
 //Failsafe
-if (isNull _u || isNil "_u") exitWith {diag_log "[GrayCivs] WARNING: Invalid target (objNull or nil). Exiting script."};
+if (isNull _u || isNil "_u" || isPlayer _u) exitWith {diag_log "[GrayCivs] WARNING: Invalid target (objNull, nil, or player). Exiting script."};
 if ((side _u != civilian) && (_u isKindOf "CAManBase")) exitWith {diag_log format ["[GrayCivs] WARNING: %1 %2 is not a civilian. Exiting script.", name _u, getPosATL _u]};
 if (_fac == civilian) then {
     _fac = east;

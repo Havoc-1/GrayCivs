@@ -63,7 +63,7 @@ GC_Alert = 3;                                                                   
             {
                 private _u = _this select 1 select 0;
                 private _chance = _this select 0 select 0;
-                if (isNull _u || (side _u != civilian) || !(_u isKindOf "CAManBase")) exitWith {["Invalid unit selected.", nil] call zen_common_fnc_showMessage};
+                if (isNull _u || (side _u != civilian) || !(_u isKindOf "CAManBase") || isPlayer _u) exitWith {["Invalid unit selected.", nil] call zen_common_fnc_showMessage};
                 [_u,(1 - _chance)] call XK_GC_fnc_shooter;
             },
             {},
@@ -99,7 +99,7 @@ GC_Alert = 3;                                                                   
                 _this select 0 params ["_fac","_GCchance","_chance","_radius"];
                 if (_fac == civilian) exitWith {["Invalid GC faction, must select West, East, or Indep."] call zen_common_fnc_showMessage};
                 _this select 1 params ["_pos"];
-                private _nearCivs = ((_pos nearEntities ["CAManBase",_radius]) select {side _x == civilian}) select {!(_x getVariable ["GC_isGC", false])} select {alive _x && !(_x getVariable ["ace_captives_isHandcuffed", false])};
+                private _nearCivs = ((_pos nearEntities ["CAManBase",_radius]) select {side _x == civilian}) select {!(_x getVariable ["GC_isGC", false]) && alive _x && !(_x getVariable ["ace_captives_isHandcuffed", false]) && !isPlayer _x};
                 if (count _nearCivs == 0) exitWith {["No nearby civilians suitable to assign as GC."] call zen_common_fnc_showMessage};
                 {
                     if (random 1 <= _GCchance) then {[_x, (1 - _chance), _fac] call XK_GC_fnc_shooter};
