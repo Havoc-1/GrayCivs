@@ -7,7 +7,7 @@
  *	Return Value: None
  *
  *	Examples:
- *      [man1, 0.3, 100, east, 3] call XK_GC_fnc_shooter;
+ *      [man1, 0.3, east, 100, 3] call XK_GC_fnc_shooter;
  */
 
 params ["_u",["_grabChance",GC_grabChance],["_fac",GC_Fac],["_range",GC_Act],["_tick",GC_Tick]];
