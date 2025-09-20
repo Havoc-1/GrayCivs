@@ -15,7 +15,7 @@ params ["_u",["_range",GC_Range],["_sideFac",GC_Fac]];
 
 private _getList = [];
 private _listOld = _u getVariable ["GC_List", []];
-_getList = (_u nearEntities [["CAManBase","AllVehicles"], _range]) select {(_x != _u) && ([side _x, _sideFac] call BIS_fnc_sideIsEnemy)};
+_getList = (_u nearEntities [["CAManBase","AllVehicles"], _range]) select {(_x != _u) && (side _x != civilian) && ([side _x, _sideFac] call BIS_fnc_sideIsEnemy)};
 if (count _getList == 0) exitWith {};
 if (_getList isNotEqualTo _listOld) then {
     _u setVariable ["GC_List", _getList];

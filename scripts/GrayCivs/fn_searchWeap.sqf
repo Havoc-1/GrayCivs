@@ -22,11 +22,25 @@ diag_log format ["[GrayCivs] %1 %2 will search for a nearby weapon in %3 seconds
         params ["_u", "_timeout", "_debug"];
         private _wpns = (nearestObjects [_u, ["WeaponHolder", "WeaponHolderSimulated"], 30]) select {!(isPlayer (attachedTo _x))};
         private _wpnsNotTaken = _wpns select {(_x getVariable ["GC_wpnTaken", false]) == false};
-        if (count _wpns == 0 || count _wpnsNotTaken == 0) exitWith {diag_log format ["[GrayCivs] %1 %2 has no nearby guns to grab.", name _u, getPosATL _u]};
+        if (count _wpns == 0 || count _wpnsNotTaken == 0) exitWith {
+            diag_log format ["[GrayCivs] %1 %2 has no nearby guns to grab.", name _u, getPosATL _u];
+            if (side _u != civilian) then {
+                private _grp = createGroup civilian;
+                [_u] joinSilent _grp;
+            };
+        };
         private _randomGun = selectRandom _wpnsNotTaken;
         _randomGun setVariable ["GC_wpnTaken", true];
-        if (isNull _randomGun) exitWith {diag_log format ["[GrayCivs] %1 %2 weapon seach cancelled. Gun no longer exists.", name _u, getPosATL _u]};
+        if (isNull _randomGun) exitWith {
+            diag_log format ["[GrayCivs] %1 %2 weapon seach cancelled. Gun no longer exists.", name _u, getPosATL _u];
+            if (side _u != civilian) then {
+                private _grp = createGroup civilian;
+                [_u] joinSilent _grp;
+            };
+        };
         diag_log format ["[GrayCivs] %1 %2 is trying to grab %3 %4.", name _u, getPosATL _u, ((weaponCargo _randomGun) select 0), getPosATL _randomGun];
+        _u enableAI "MOVE";
+        _u enableAI "PATH";
         [group _u] call CBA_fnc_clearWaypoints;
         [group _u, getPosATL _randomGun, 0, "MOVE", "CARELESS", "YELLOW", "FULL", "STAG COLUMN"] call CBA_fnc_addWaypoint;
         
@@ -71,7 +85,8 @@ diag_log format ["[GrayCivs] %1 %2 will search for a nearby weapon in %3 seconds
                 if (_gunDrawn) exitWith {};
                 _u setBehaviour "AWARE";
                 private _grp = createGroup civilian;
-                (units group _u) joinSilent _grp;
+                [_u] joinSilent _grp;
+                diag_log format ["[GrayCivs] %1 %2 failed to grab a weapon. Reverting to civilian.", name _u, getPosATL _u];
             },
             [_u],
             _timeout

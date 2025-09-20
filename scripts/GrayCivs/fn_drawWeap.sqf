@@ -25,7 +25,7 @@ diag_log format ["[GrayCivs] %1 %2 is drawing weapon in %3 seconds. Exiting PFH.
 [
     {
         params ["_u","_weap","_mags"];
-        (_u getVariable ["ace_captives_isHandcuffed", false]) == true;
+        _u getVariable ["ace_captives_isHandcuffed", false];
     },
     {
         params ["_u","_weap","_mags"];
@@ -53,6 +53,8 @@ diag_log format ["[GrayCivs] %1 %2 is drawing weapon in %3 seconds. Exiting PFH.
             if (_u getVariable ["ace_captives_isHandcuffed", false]) exitWith {
             diag_log format ["[GrayCivs] %1 %2 is restrained, cannot draw weapon.", name _u, getPosATL _u];
             };
+            _u enableAI "MOVE";
+            _u enableAI "PATH";
             _u addMagazines [((compatibleMagazines _weap) select 0),_mags];
             _u addWeapon _weap;
             _u setBehaviour "COMBAT";

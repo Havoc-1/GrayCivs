@@ -24,7 +24,7 @@ if (GC_Fac == civilian) then {
 };
 
 private _isGC = _u getVariable ["GC_isGC", false];
-if !(_isGC) exitWith {};
+if (_isGC) exitWith {};
 _u setVariable ["GC_isGC", true];
 
 diag_log format ["[GreyCivs] Grey Civilian (Spotter) has been initalized on %1 %2.", name _u, getPosATL _u];

@@ -7,21 +7,21 @@
  *	Return Value: None
  *
  *	Examples:
- *      [man1, east, 100, 3] call XK_GC_fnc_shooter;
+ *      [man1, 0.3, 100, east, 3] call XK_GC_fnc_shooter;
  */
 
-//Push to new function file
-_this params ["_u",["_fac", GC_Fac],["_range",GC_Act],["_tick",GC_Tick]];
+params ["_u",["_grabChance",GC_grabChance],["_fac",GC_Fac],["_range",GC_Act],["_tick",GC_Tick]];
 
-//Faction failsafe
+//Failsafe
+if (isNull _u || isNil "_u") exitWith {diag_log "[GrayCivs] WARNING: Invalid target (objNull or nil). Exiting script."};
 if ((side _u != civilian) && (_u isKindOf "CAManBase")) exitWith {diag_log format ["[GrayCivs] WARNING: %1 %2 is not a civilian. Exiting script.", name _u, getPosATL _u]};
 if (_fac == civilian) then {
     _fac = east;
     diag_log format ["[GrayCivs] %1 %2 cannot be spotting for civilian faction. Defaulting to east."];
 };
 
-private _isGC = _u getVariable ["GC_isGC", false];
-if !(_isGC) exitWith {};
+//GrayCiv init on unit
+if (_u getVariable ["GC_isGC", false]) exitWith {};
 _u setVariable ["GC_isGC", true];
 diag_log format ["[GrayCivs] Grey Civilian (Shooter) has been initalized on %1.", name _u];
 [_u] joinSilent grpNull;
@@ -29,21 +29,19 @@ diag_log format ["[GrayCivs] Grey Civilian (Shooter) has been initalized on %1."
 //Activates search when BLUFOR is in range
 [
     {
-        params ["_u","_fac","_range"];
+        params ["_u","_grabChance","_fac","_range"];
         count ((_u nearEntities [["CAMan","AllVehicles"], _range]) select {(_x != _u) && (isPlayer _x) && ([side _x, _fac] call BIS_fnc_sideIsEnemy)}) != 0;
     },
     {
-        params ["_u","_fac","_range","_tick"];
+        params ["_u","_grabChance","_fac","_range","_tick"];
         diag_log format ["[GrayCivs] %1 %2 is now searching for targets. Starting PFH.",name _u, getPosATL _u];
-        diag_log format ["[GrayCivs] Faction: %1, Range: %2", _fac, _range];
         private _grp = createGroup _fac;
-        
         [_u] joinSilent _grp;
         _u setCaptive true;
         //_u setBehaviour "CARELESS";
         [
             {
-                _args params ["_u"];
+                _args params ["_u","_grabChance"];
 
                 //Ends PFH if dead
                 if !(alive _u) exitWith {
@@ -70,7 +68,7 @@ diag_log format ["[GrayCivs] Grey Civilian (Shooter) has been initalized on %1."
 
                         //Decides whether unit is drawing or grabbing gun
                         private _timer = GC_drawTime call BIS_fnc_randomInt;
-                        if (random 1 > GC_grabChance) then {
+                        if (random 1 > _grabChance) then {
                             //Draws concealed weapon
                             [_u, _timer] call XK_GC_fnc_drawWeap;
                         } else {
@@ -81,8 +79,8 @@ diag_log format ["[GrayCivs] Grey Civilian (Shooter) has been initalized on %1."
                 } forEach ([_u] call XK_GC_fnc_getList);
             },
             _tick,
-            [_u]
+            [_u,_grabChance]
         ] call CBA_fnc_addPerFrameHandler;
     },
-    [_u,_fac,_range,_tick]
+    [_u,_grabChance,_fac,_range,_tick]
 ] call CBA_fnc_waitUntilAndExecute;
